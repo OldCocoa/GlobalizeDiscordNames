@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Tweak settings</string>
+			<key>footerText</key>
+			<string>Replace all instances of username with global_name in the JSON of a Discord request.</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>Enable GlobalizeDiscordNames</string>
+			<key>key</key>
+			<string>Enabled</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.patricktbp.globalizediscordnames</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Username settings</string>
+			<key>footerText</key>
+			<string>When a user has a global display name set, show it in place of their username.</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>Use global_name</string>
+			<key>key</key>
+			<string>UseGlobalName</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.patricktbp.globalizediscordnames</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Discriminator</string>
+			<key>footerText</key>
+			<string>Overrides every single discriminator (#0000) with a specific number, like #1337. (Can use normal characters!)</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>Override discriminator</string>
+			<key>key</key>
+			<string>OverrideDiscriminator</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.patricktbp.globalizediscordnames</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>label</key>
+			<string>Value</string>
+			<key>key</key>
+			<string>CustomDiscriminator</string>
+			<key>default</key>
+			<string>0001</string>
+			<key>defaults</key>
+			<string>com.patricktbp.globalizediscordnames</string>
+			<key>keyboardType</key>
+			<string>NumberPad</string>
+			<key>maxLength</key>
+			<integer>128</integer>
+			<key>placeholder</key>
+			<string>0001</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Launch alert</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>Show patch alert on launch</string>
+			<key>key</key>
+			<string>ShowLaunchAlert</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.patricktbp.globalizediscordnames</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>GlobalizeDiscordNames</string>
+</dict>
+</plist>
