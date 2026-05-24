@@ -16,30 +16,14 @@ static BOOL gGDN_showLaunchAlert = YES;
 static BOOL gGDN_alertShown = NO;
 
 
-static BOOL gdn_prefBool(NSString *key, BOOL fallback) {
-	CFPropertyListRef v = CFPreferencesCopyAppValue((__bridge CFStringRef)key,
-	                                                (__bridge CFStringRef)kGDNPrefsDomain);
-	if (!v) return fallback;
-	id obj = (__bridge_transfer id)v;
-	if ([obj isKindOfClass:[NSNumber class]]) return [obj boolValue];
-	return fallback;
-}
-
-static NSString *gdn_prefString(NSString *key, NSString *fallback) {
-	CFPropertyListRef v = CFPreferencesCopyAppValue((__bridge CFStringRef)key,
-	                                                (__bridge CFStringRef)kGDNPrefsDomain);
-	if (!v) return fallback;
-	id obj = (__bridge_transfer id)v;
-	if ([obj isKindOfClass:[NSString class]] && [(NSString *)obj length] > 0) return obj;
-	return fallback;
-}
-
 static void gdn_loadPrefs(void) {
-	gGDN_enabled = gdn_prefBool(@"Enabled", YES);
-	gGDN_useGlobalName = gdn_prefBool(@"UseGlobalName", YES);
-	gGDN_overrideDiscriminator = gdn_prefBool(@"OverrideDiscriminator", YES);
-	gGDN_customDiscriminator = gdn_prefString(@"CustomDiscriminator", @"0001");
-	gGDN_showLaunchAlert = gdn_prefBool(@"ShowLaunchAlert", YES);
+	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile: [@"/var/mobile/Library/Preferences/" stringByAppendingString: [kGDNPrefsDomain stringByAppendingString:@".plist"]]];
+
+	gGDN_enabled = prefs[@"Enabled"] ? [prefs[@"Enabled"] boolValue] : YES;
+	gGDN_useGlobalName = prefs[@"UseGlobalName"] ? [prefs[@"UseGlobalName"] boolValue] : YES;
+	gGDN_overrideDiscriminator = prefs[@"OverrideDiscriminator"] ? [prefs[@"OverrideDiscriminator"] boolValue] : YES;
+	gGDN_customDiscriminator = ([prefs[@"CustomDiscriminator"] length] > 0) ? prefs[@"CustomDiscriminator"] : @"0001";
+	gGDN_showLaunchAlert = prefs[@"ShowLaunchAlert"] ? [prefs[@"ShowLaunchAlert"] boolValue] : YES;
 }
 
 static void gdn_prefsChanged(CFNotificationCenterRef center, void *observer,
@@ -145,8 +129,7 @@ static GDNZlibContext *gdn_zlibFor(id socket) {
 	if (!ctx) {
 		ctx = [[GDNZlibContext alloc] init];
 		if (ctx) {
-			objc_setAssociatedObject(socket, &kGDNZlibKey, ctx,
-			                         OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+			objc_setAssociatedObject(socket, &kGDNZlibKey, ctx, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		}
 	}
 	return ctx;
@@ -160,9 +143,7 @@ static NSString *gdn_inflateBinaryFrame(id socket, NSData *frame) {
 	if (len == 0) return nil;
 
 	const uint8_t *bytes = (const uint8_t *)frame.bytes;
-	BOOL endsWithFlush = (len >= 4 &&
-	                     bytes[len - 4] == 0x00 && bytes[len - 3] == 0x00 &&
-	                     bytes[len - 2] == 0xFF && bytes[len - 1] == 0xFF);
+	BOOL endsWithFlush = (len >= 4 && bytes[len - 4] == 0x00 && bytes[len - 3] == 0x00 && bytes[len - 2] == 0xFF && bytes[len - 1] == 0xFF);
 
 	ctx->_stream.next_in = (Bytef *)bytes;
 	ctx->_stream.avail_in = (uInt)len;
@@ -178,8 +159,10 @@ static NSString *gdn_inflateBinaryFrame(id socket, NSData *frame) {
 		if (rc != Z_OK && rc != Z_BUF_ERROR && rc != Z_STREAM_END) {
 			inflateEnd(&ctx->_stream);
 			memset(&ctx->_stream, 0, sizeof(ctx->_stream));
+
 			inflateInit(&ctx->_stream);
 			[ctx->_accumulated setLength:0];
+
 			return nil;
 		}
 
@@ -219,6 +202,7 @@ static NSString *gdn_inflateBinaryFrame(id socket, NSData *frame) {
 			if (inflated) {
 				NSString *patched = gdn_patchJSONString(inflated) ?: inflated;
 				%orig(webSocket, patched);
+
 				return;
 			}
 			return;
@@ -271,10 +255,9 @@ static BOOL gdn_isDiscordAPIURL(NSURL *url) {
 	self.buffer = [NSMutableData data];
 
 	NSURLSessionConfiguration *cfg = [NSURLSessionConfiguration defaultSessionConfiguration];
-	self.session = [NSURLSession sessionWithConfiguration:cfg
-	                                             delegate:self
-	                                        delegateQueue:nil];
+	self.session = [NSURLSession sessionWithConfiguration:cfg delegate:self delegateQueue:nil];
 	self.dataTask = [self.session dataTaskWithRequest:mreq];
+
 	[self.dataTask resume];
 }
 
@@ -287,9 +270,7 @@ static BOOL gdn_isDiscordAPIURL(NSURL *url) {
           dataTask:(NSURLSessionDataTask *)dataTask
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
-	[self.client URLProtocol:self
-	      didReceiveResponse:response
-	      cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+	[self.client URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
 	completionHandler(NSURLSessionResponseAllow);
 }
 
@@ -334,6 +315,7 @@ didCompleteWithError:(NSError *)error {
 + (instancetype)defaultSessionConfiguration {
 	NSURLSessionConfiguration *cfg = %orig;
 	NSMutableArray *protos = [NSMutableArray arrayWithArray:cfg.protocolClasses ?: @[]];
+	
 	if (![protos containsObject:[GDNURLProtocol class]]) {
 		[protos insertObject:[GDNURLProtocol class] atIndex:0];
 		cfg.protocolClasses = protos;
@@ -344,6 +326,7 @@ didCompleteWithError:(NSError *)error {
 + (instancetype)ephemeralSessionConfiguration {
 	NSURLSessionConfiguration *cfg = %orig;
 	NSMutableArray *protos = [NSMutableArray arrayWithArray:cfg.protocolClasses ?: @[]];
+
 	if (![protos containsObject:[GDNURLProtocol class]]) {
 		[protos insertObject:[GDNURLProtocol class] atIndex:0];
 		cfg.protocolClasses = protos;
@@ -386,8 +369,7 @@ static void gdn_presentLaunchAlert(void) {
 		while (root.presentedViewController) root = root.presentedViewController;
 
 		if (!root) {
-			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)),
-			               dispatch_get_main_queue(), ^{
+			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 				gGDN_alertShown = NO;
 				gdn_presentLaunchAlert();
 			});
@@ -396,12 +378,9 @@ static void gdn_presentLaunchAlert(void) {
 
 		UIAlertController *ac = [UIAlertController
 			alertControllerWithTitle:@"GlobalizeDiscordNames"
-			                 message:@"Discord has been patched!"
+			                 message:@"Discord has been patched successfully!"
 			          preferredStyle:UIAlertControllerStyleAlert];
-
-		[ac addAction:[UIAlertAction actionWithTitle:@"OK"
-		                                       style:UIAlertActionStyleDefault
-		                                     handler:nil]];
+		[ac addAction:[UIAlertAction actionWithTitle:@"Awesome!" style:UIAlertActionStyleDefault handler:nil]];
 
 		[root presentViewController:ac animated:YES completion:nil];
 	});
